@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { ProjectList, ProjectCreate } from "@/components/ui/project-list";
 import { useToast } from "@/components/ui/toast-provider";
 import Navbar from "@/components/ui/navbar";
+import { useRouter } from "next/navigation";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const { showToast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     fetch("/api/projects", {
@@ -57,8 +59,7 @@ export default function ProjectsPage() {
   }
 
   function handleSelect(id: string) {
-    // TODO: navigate to project details/results page
-    showToast(`Selected project ${id}`, "success");
+    router.push(`/projects/details?id=${id}`);
   }
 
   return (
