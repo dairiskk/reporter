@@ -70,8 +70,8 @@ export default function ProjectDetailsPage() {
         setFilesTotal(data.total || 0);
         setFilesPage(data.page || 1);
         setFilesPageSize(data.pageSize || 10);
-        // By default, select the latest file
-        if (files.length > 0 && selectedFileId === null) {
+        // Always select the latest file on page load
+        if (files.length > 0) {
           setSelectedFileId(files[0].id);
         }
         setLoading(false);
@@ -119,12 +119,21 @@ export default function ProjectDetailsPage() {
           showToast("Report uploaded", "success");
           setUploadName("");
           setUploadModalOpen(false);
-          // Refetch files list
+          // Refetch files list and select the newest file
           fetch(`/api/projects/${projectId}/results/upload`, {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
           })
             .then(res => res.json())
-            .then(data => setFiles(Array.isArray(data) ? data : []));
+            .then(data => {
+              const files = Array.isArray(data.files) ? data.files : [];
+              setFiles(files);
+              setFilesTotal(data.total || 0);
+              setFilesPage(data.page || 1);
+              setFilesPageSize(data.pageSize || 10);
+              if (files.length > 0) {
+                setSelectedFileId(files[0].id);
+              }
+            });
         } else {
           showToast(data.error || "Failed to upload report", "error");
         }
@@ -302,12 +311,16 @@ export default function ProjectDetailsPage() {
             </div>
             <div className="w-full h-6 bg-gray-200 rounded overflow-hidden flex">
               <div
-                className="h-full bg-green-500 transition-all duration-300"
+                className="h-full bg-green-500 transition-all duration-300 cursor-pointer"
                 style={{ width: `${reviewedPercent}%` }}
+                title="Show reviewed only"
+                onClick={() => setReviewed("yes")}
               />
               <div
-                className="h-full bg-red-500 transition-all duration-300"
+                className="h-full bg-red-500 transition-all duration-300 cursor-pointer"
                 style={{ width: `${notReviewedPercent}%` }}
+                title="Show not reviewed only"
+                onClick={() => setReviewed("no")}
               />
             </div>
           </div>

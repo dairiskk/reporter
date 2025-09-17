@@ -13,10 +13,14 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
   const projectId = Number(params.id);
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") || "all";
+  const fileId = searchParams.get("fileId");
 
   const where: any = { projectId };
   if (status !== "all") {
     where.status = status;
+  }
+  if (fileId) {
+    where.reportFileId = Number(fileId);
   }
 
   const results = await prisma.testResult.findMany({
