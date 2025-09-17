@@ -22,9 +22,14 @@ export function parsePlaywrightJson(json: any, projectId: number): ParsedResult[
       for (const spec of suite.specs || []) {
         for (const test of spec.tests || []) {
           for (const result of test.results || []) {
+            // Combine immediate parent suite title and spec title
+            const testNameParts = [];
+            if (suite.title) testNameParts.push(suite.title);
+            if (spec.title) testNameParts.push(spec.title);
+            if (test.title) testNameParts.push(test.title);
             results.push({
               projectId,
-              testName: `${spec.title} ${test.title || ""}`.trim(),
+              testName: testNameParts.join(" ").trim(),
               filePath: spec.file || suite.file || "",
               projectName: test.projectName || "",
               status: result.status,
