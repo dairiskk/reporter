@@ -27,6 +27,7 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
       status: true,
       timestamp: true,
       duration: true,
+      reportFileId: true,
       review: {
         select: {
           reason: true,
@@ -43,6 +44,7 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
     status: r.status,
     timestamp: r.timestamp,
     duration: r.duration,
+    reportFileId: r.reportFileId,
     reviewed: !!r.review,
     review: r.review ? { reason: r.review.reason, comments: r.review.comments } : null,
   }));

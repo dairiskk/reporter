@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import Navbar from "@/components/ui/navbar";
 import { useToast } from "@/components/ui/toast-provider";
 import { ReviewModal } from "@/components/ui/review-modal";
+import { UploadModal } from "@/components/ui/upload-modal";
+import React from "react";
 
 const PAGE_SIZE = 25;
 const REVIEW_REASONS = [
@@ -28,7 +30,10 @@ export default function ProjectDetailsPage() {
   const [results, setResults] = useState<any[]>([]);
   const [files, setFiles] = useState<any[]>([]);
   const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
+  const [chooseModalOpen, setChooseModalOpen] = useState(false);
   const [uploadName, setUploadName] = useState("");
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(initialSearch);
   const [page, setPage] = useState(initialPage);
@@ -46,7 +51,13 @@ export default function ProjectDetailsPage() {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     })
       .then(res => res.json())
-      .then(data => setFiles(Array.isArray(data) ? data : []));
+      .then(data => {
+        setFiles(Array.isArray(data) ? data : []);
+        // By default, select the latest file
+        if (Array.isArray(data) && data.length > 0 && selectedFileId === null) {
+          setSelectedFileId(data[0].id);
+        }
+      });
     // Fetch test results for selected file
     if (selectedFileId) {
       fetch(`/api/projects/${projectId}/results?fileId=${selectedFileId}`, {
@@ -67,12 +78,12 @@ export default function ProjectDetailsPage() {
     }
   }, [projectId, selectedFileId, showToast]);
 
-  function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  function handleUpload(file: File) {
     if (!file || !projectId || !uploadName) {
       showToast("Please provide a name for the upload.", "error");
       return;
     }
+    setUploadLoading(true);
     const formData = new FormData();
     formData.append("file", file);
     formData.append("name", uploadName);
@@ -83,9 +94,11 @@ export default function ProjectDetailsPage() {
     })
       .then(res => res.json())
       .then(data => {
+        setUploadLoading(false);
         if (data.success) {
           showToast("Report uploaded", "success");
           setUploadName("");
+          setUploadModalOpen(false);
           // Refetch files list
           fetch(`/api/projects/${projectId}/results/upload`, {
             headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -96,18 +109,23 @@ export default function ProjectDetailsPage() {
           showToast(data.error || "Failed to upload report", "error");
         }
       })
-      .catch(() => showToast("Failed to upload report", "error"));
+      .catch(() => {
+        setUploadLoading(false);
+        showToast("Failed to upload report", "error");
+      });
   }
 
-  // Filter and paginate results
-  const filtered = results.filter(r => {
-    const matchesSearch = r.testName.toLowerCase().includes(search.toLowerCase()) || r.status.toLowerCase().includes(search.toLowerCase());
-    const matchesReviewed =
-      reviewed === "all" ||
-      (reviewed === "yes" && r.reviewed) ||
-      (reviewed === "no" && !r.reviewed);
-    return matchesSearch && matchesReviewed;
-  });
+  // Filter and paginate results for selected file
+  const filtered = results
+    .filter(r => selectedFileId ? r.reportFileId === selectedFileId : true)
+    .filter(r => {
+      const matchesSearch = r.testName.toLowerCase().includes(search.toLowerCase()) || r.status.toLowerCase().includes(search.toLowerCase());
+      const matchesReviewed =
+        reviewed === "all" ||
+        (reviewed === "yes" && r.reviewed) ||
+        (reviewed === "no" && !r.reviewed);
+      return matchesSearch && matchesReviewed;
+    });
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -181,52 +199,75 @@ export default function ProjectDetailsPage() {
       <Navbar />
       <div className="max-w-5xl mx-auto py-12">
         <h1 className="text-3xl font-bold mb-6">Project {projectId}</h1>
-        {/* Uploaded files list */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-2">Uploaded Reports</h2>
-          <div className="flex flex-col gap-2">
-            {files.map(file => (
-              <button
-                key={file.id}
-                className={`px-4 py-2 rounded border ${selectedFileId === file.id ? "bg-blue-100 border-blue-500" : "bg-white border-gray-300"}`}
-                onClick={() => setSelectedFileId(file.id)}
-              >
-                <span className="font-medium">{file.name}</span>
-                <span className="ml-4 text-gray-500 text-xs">{new Date(file.createdAt).toLocaleString()}</span>
-              </button>
-            ))}
-            {files.length === 0 && <span className="text-gray-400">No uploads yet.</span>}
-          </div>
+        {/* Choose report button and upload button */}
+        <div className="mb-6 flex items-center justify-between">
+          <Button onClick={() => setChooseModalOpen(true)}>
+            Choose Report
+          </Button>
+          <Button onClick={() => setUploadModalOpen(true)}>
+            Upload Report
+          </Button>
         </div>
-        {/* Progress bar */}
-        <div className="mb-6">
-          <div className="mb-2 flex justify-between text-sm">
-            <span>Reviewed: {reviewedCount}</span>
-            <span>Not reviewed: {notReviewedCount}</span>
-            <span>Total: {totalCount}</span>
+        {/* Choose report modal */}
+        {chooseModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-20 backdrop-blur-sm">
+            <div className="bg-white rounded shadow-lg p-6 w-full max-w-md">
+              <h2 className="text-xl font-bold mb-4">Choose Uploaded Report</h2>
+              <div className="flex flex-col gap-2 mb-4">
+                {files.map(file => (
+                  <button
+                    key={file.id}
+                    className={`px-4 py-2 rounded border text-left ${selectedFileId === file.id ? "bg-blue-100 border-blue-500" : "bg-white border-gray-300"}`}
+                    onClick={() => {
+                      setSelectedFileId(file.id);
+                      setChooseModalOpen(false);
+                    }}
+                  >
+                    <span className="font-medium">{file.name}</span>
+                    <span className="ml-4 text-gray-500 text-xs">{new Date(file.createdAt).toLocaleString()}</span>
+                  </button>
+                ))}
+                {files.length === 0 && <span className="text-gray-400">No uploads yet.</span>}
+              </div>
+              <div className="flex justify-end">
+                <Button variant="secondary" onClick={() => setChooseModalOpen(false)}>Close</Button>
+              </div>
+            </div>
           </div>
-          <div className="w-full h-6 bg-gray-200 rounded overflow-hidden flex">
-            <div
-              className="h-full bg-green-500 transition-all duration-300"
-              style={{ width: `${reviewedPercent}%` }}
-            />
-            <div
-              className="h-full bg-red-500 transition-all duration-300"
-              style={{ width: `${notReviewedPercent}%` }}
-            />
+        )}
+        {/* Show selected file info and progress bar */}
+        {selectedFileId && (
+          <div className="mb-6">
+            <div className="mb-2 flex justify-between text-sm">
+              <span>Selected Report: <b>{files.find(f => f.id === selectedFileId)?.name}</b></span>
+              <span>Uploaded: {files.find(f => f.id === selectedFileId) ? new Date(files.find(f => f.id === selectedFileId).createdAt).toLocaleString() : ""}</span>
+            </div>
+            <div className="mb-2 flex justify-between text-sm">
+              <span>Reviewed: {reviewedCount}</span>
+              <span>Not reviewed: {notReviewedCount}</span>
+              <span>Total: {totalCount}</span>
+            </div>
+            <div className="w-full h-6 bg-gray-200 rounded overflow-hidden flex">
+              <div
+                className="h-full bg-green-500 transition-all duration-300"
+                style={{ width: `${reviewedPercent}%` }}
+              />
+              <div
+                className="h-full bg-red-500 transition-all duration-300"
+                style={{ width: `${notReviewedPercent}%` }}
+              />
+            </div>
           </div>
-        </div>
-        <div className="mb-6">
-          <label className="block mb-2 font-medium">Upload Playwright Report</label>
-          <input
-            type="text"
-            placeholder="Report name..."
-            value={uploadName}
-            onChange={e => setUploadName(e.target.value)}
-            className="mb-2 border rounded px-3 py-2 w-full max-w-md"
-          />
-          <input type="file" accept="application/json" onChange={handleUpload} className="mb-2" />
-        </div>
+        )}
+        {/* Upload modal */}
+        <UploadModal
+          open={uploadModalOpen}
+          onClose={() => setUploadModalOpen(false)}
+          onUpload={handleUpload}
+          uploadName={uploadName}
+          setUploadName={setUploadName}
+          loading={uploadLoading}
+        />
         <div className="mb-4 flex items-center gap-2">
           <input
             type="text"
