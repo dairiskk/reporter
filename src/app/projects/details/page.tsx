@@ -26,6 +26,9 @@ export default function ProjectDetailsPage() {
   const initialReviewed = params.get("reviewed") || "all";
   const { showToast } = useToast();
   const [results, setResults] = useState<any[]>([]);
+  const [files, setFiles] = useState<any[]>([]);
+  const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
+  const [uploadName, setUploadName] = useState("");
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState(initialSearch);
   const [page, setPage] = useState(initialPage);
@@ -38,25 +41,41 @@ export default function ProjectDetailsPage() {
   useEffect(() => {
     if (!projectId) return;
     setLoading(true);
-    fetch(`/api/projects/${projectId}/results`, {
+    // Fetch uploaded files
+    fetch(`/api/projects/${projectId}/results/upload`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     })
       .then(res => res.json())
-      .then(data => {
-        setResults(Array.isArray(data) ? data : []);
-        setLoading(false);
+      .then(data => setFiles(Array.isArray(data) ? data : []));
+    // Fetch test results for selected file
+    if (selectedFileId) {
+      fetch(`/api/projects/${projectId}/results?fileId=${selectedFileId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       })
-      .catch(() => {
-        showToast("Failed to load project results", "error");
-        setLoading(false);
-      });
-  }, [projectId, showToast]);
+        .then(res => res.json())
+        .then(data => {
+          setResults(Array.isArray(data) ? data : []);
+          setLoading(false);
+        })
+        .catch(() => {
+          showToast("Failed to load project results", "error");
+          setLoading(false);
+        });
+    } else {
+      setResults([]);
+      setLoading(false);
+    }
+  }, [projectId, selectedFileId, showToast]);
 
   function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file || !projectId) return;
+    if (!file || !projectId || !uploadName) {
+      showToast("Please provide a name for the upload.", "error");
+      return;
+    }
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("name", uploadName);
     fetch(`/api/projects/${projectId}/results/upload`, {
       method: "POST",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -66,11 +85,13 @@ export default function ProjectDetailsPage() {
       .then(data => {
         if (data.success) {
           showToast("Report uploaded", "success");
-          // Refetch results from API after upload
-          fetch(`/api/projects/${projectId}/results`)
+          setUploadName("");
+          // Refetch files list
+          fetch(`/api/projects/${projectId}/results/upload`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+          })
             .then(res => res.json())
-            .then(data => setResults(Array.isArray(data) ? data : []))
-            .catch(() => showToast("Failed to load project results", "error"));
+            .then(data => setFiles(Array.isArray(data) ? data : []));
         } else {
           showToast(data.error || "Failed to upload report", "error");
         }
@@ -160,6 +181,23 @@ export default function ProjectDetailsPage() {
       <Navbar />
       <div className="max-w-5xl mx-auto py-12">
         <h1 className="text-3xl font-bold mb-6">Project {projectId}</h1>
+        {/* Uploaded files list */}
+        <div className="mb-6">
+          <h2 className="text-lg font-semibold mb-2">Uploaded Reports</h2>
+          <div className="flex flex-col gap-2">
+            {files.map(file => (
+              <button
+                key={file.id}
+                className={`px-4 py-2 rounded border ${selectedFileId === file.id ? "bg-blue-100 border-blue-500" : "bg-white border-gray-300"}`}
+                onClick={() => setSelectedFileId(file.id)}
+              >
+                <span className="font-medium">{file.name}</span>
+                <span className="ml-4 text-gray-500 text-xs">{new Date(file.createdAt).toLocaleString()}</span>
+              </button>
+            ))}
+            {files.length === 0 && <span className="text-gray-400">No uploads yet.</span>}
+          </div>
+        </div>
         {/* Progress bar */}
         <div className="mb-6">
           <div className="mb-2 flex justify-between text-sm">
@@ -180,6 +218,13 @@ export default function ProjectDetailsPage() {
         </div>
         <div className="mb-6">
           <label className="block mb-2 font-medium">Upload Playwright Report</label>
+          <input
+            type="text"
+            placeholder="Report name..."
+            value={uploadName}
+            onChange={e => setUploadName(e.target.value)}
+            className="mb-2 border rounded px-3 py-2 w-full max-w-md"
+          />
           <input type="file" accept="application/json" onChange={handleUpload} className="mb-2" />
         </div>
         <div className="mb-4 flex items-center gap-2">

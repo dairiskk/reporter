@@ -24,12 +24,25 @@ model Project {
   id        Int         @id @default(autoincrement())
   name      String
   results   TestResult[]
+  reportFiles ReportFile[]
+}
+
+
+model ReportFile {
+  id         Int       @id @default(autoincrement())
+  name       String
+  createdAt  DateTime  @default(now())
+  project    Project   @relation(fields: [projectId], references: [id])
+  projectId  Int
+  results    TestResult[]
 }
 
 model TestResult {
   id          Int       @id @default(autoincrement())
   project     Project   @relation(fields: [projectId], references: [id])
   projectId   Int
+  reportFile  ReportFile? @relation(fields: [reportFileId], references: [id])
+  reportFileId Int?
   testName    String
   filePath    String
   projectName String
