@@ -66,7 +66,11 @@ export default function ProjectDetailsPage() {
       .then(data => {
         if (data.success) {
           showToast("Report uploaded", "success");
-          setResults(prev => [...prev, ...data.results]);
+          // Refetch results from API after upload
+          fetch(`/api/projects/${projectId}/results`)
+            .then(res => res.json())
+            .then(data => setResults(Array.isArray(data) ? data : []))
+            .catch(() => showToast("Failed to load project results", "error"));
         } else {
           showToast(data.error || "Failed to upload report", "error");
         }
@@ -219,22 +223,30 @@ export default function ProjectDetailsPage() {
                   <td className="px-4 py-2 whitespace-nowrap">{result.reviewed ? "Yes" : "No"}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{result.review?.reason ?? "-"}</td>
                   <td className="px-4 py-2 max-w-[200px] truncate whitespace-nowrap">
-                    {result.review?.comments ? (
-                      <button
-                        className="text-blue-500 underline"
-                        onClick={e => {
-                          e.preventDefault();
-                          setShowComment(result.review.comments);
-                        }}
-                      >Show comment</button>
+                    {result.status !== "passed" ? (
+                      result.review?.comments ? (
+                        <button
+                          className="text-blue-500 underline"
+                          onClick={e => {
+                            e.preventDefault();
+                            setShowComment(result.review.comments);
+                          }}
+                        >Show comment</button>
+                      ) : (
+                        "-"
+                      )
                     ) : (
-                      "-"
+                      <span className="text-gray-400">N/A</span>
                     )}
                   </td>
                   <td className="px-4 py-2 whitespace-nowrap">
-                    <Button size="sm" variant="outline" onClick={() => startEditReview(result)}>
-                      Edit
-                    </Button>
+                    {result.status !== "passed" ? (
+                      <Button size="sm" variant="outline" onClick={() => startEditReview(result)}>
+                        Edit
+                      </Button>
+                    ) : (
+                      <span className="text-gray-400">N/A</span>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -81,7 +81,7 @@
                     {
                       "workerIndex": 0,
                       "parallelIndex": 0,
-                      "status": "passed",
+                      "status": "failed",
                       "duration": 7727,
                       "errors": [],
                       "stdout": [

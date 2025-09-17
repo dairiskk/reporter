@@ -4,8 +4,8 @@ import { verifyAuth } from "@/utils/verifyAuth";
 
 const prisma = new PrismaClient();
 
-export async function GET(req: Request, context: { params: { id: string } }) {
-  const { params } = context;
+export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
+  const params = await context.params;
   const user = verifyAuth(req);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
