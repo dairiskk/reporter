@@ -91,9 +91,10 @@ export default function ProjectDetailsPage() {
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Progress bar calculation
-  const reviewedCount = filtered.filter(r => r.reviewed).length;
-  const notReviewedCount = filtered.length - reviewedCount;
+  // For progress bar: all tests with status 'passed' are considered reviewed
   const totalCount = filtered.length;
+  const reviewedCount = filtered.filter(r => r.status === "passed" || r.reviewed).length;
+  const notReviewedCount = totalCount - reviewedCount;
   const reviewedPercent = totalCount ? Math.round((reviewedCount / totalCount) * 100) : 0;
   const notReviewedPercent = totalCount ? 100 - reviewedPercent : 0;
 
