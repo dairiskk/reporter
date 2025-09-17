@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { verifyAuth } from "@/utils/verifyAuth";
 
 const prisma = new PrismaClient();
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, context: { params: { id: string } }) {
+  const { params } = context;
+  const user = verifyAuth(req);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const projectId = Number(params.id);
   const { searchParams } = new URL(req.url);
   const status = searchParams.get("status") || "all";

@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { verifyAuth } from "@/utils/verifyAuth";
+
 
 const prisma = new PrismaClient();
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, context: { params: { id: string } }) {
+  const { params } = context;
+  const user = verifyAuth(req);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const id = Number(params.id);
   if (!id) {
     return NextResponse.json({ error: "Invalid project id" }, { status: 400 });

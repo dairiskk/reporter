@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { verifyAuth } from "@/utils/verifyAuth";
 
 const prisma = new PrismaClient();
 
-export async function GET() {
+export async function GET(req: Request) {
+  const user = verifyAuth(req);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const projects = await prisma.project.findMany({
     include: {
       results: {
@@ -21,6 +26,10 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const user = verifyAuth(req);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { name } = await req.json();
   if (!name) {
     return NextResponse.json({ error: "Missing project name" }, { status: 400 });
