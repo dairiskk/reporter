@@ -4,8 +4,18 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/ui/navbar";
 import { useToast } from "@/components/ui/toast-provider";
+import { ReviewModal } from "@/components/ui/review-modal";
 
 const PAGE_SIZE = 25;
+const REVIEW_REASONS = [
+  "ENV_ISSUE",
+  "TEST_SCRIPT_ISSUE",
+  "NEW_REQUIREMENT",
+  "FLAKY_TEST",
+  "DATA_ISSUE",
+  "EXTERNAL_DEPENDENCY",
+  "OTHER",
+];
 
 export default function ProjectDetailsPage() {
   const router = useRouter();
@@ -20,6 +30,10 @@ export default function ProjectDetailsPage() {
   const [search, setSearch] = useState(initialSearch);
   const [page, setPage] = useState(initialPage);
   const [reviewed, setReviewed] = useState(initialReviewed);
+  const [editingReviewId, setEditingReviewId] = useState<number | null>(null);
+  const [reviewForm, setReviewForm] = useState<{ reason: string; comments: string }>({ reason: "OTHER", comments: "" });
+  const [modalOpen, setModalOpen] = useState(false);
+  const [showComment, setShowComment] = useState<string | null>(null);
 
   useEffect(() => {
     if (!projectId) return;
@@ -89,6 +103,53 @@ export default function ProjectDetailsPage() {
     window.history.replaceState({}, "", url.toString());
   }, [search, page, reviewed, projectId]);
 
+  function startEditReview(result: any) {
+    setEditingReviewId(result.id);
+    setReviewForm({ reason: result.review?.reason || "OTHER", comments: result.review?.comments || "" });
+    setModalOpen(true);
+  }
+  function cancelEditReview() {
+    setEditingReviewId(null);
+    setReviewForm({ reason: "OTHER", comments: "" });
+    setModalOpen(false);
+  }
+  function getUserIdFromToken() {
+    const token = localStorage.getItem("token");
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.userId;
+    } catch {
+      return null;
+    }
+  }
+  function saveReview(result: any) {
+    const qaId = getUserIdFromToken();
+    if (!qaId) {
+      showToast("User ID not found in token", "error");
+      return;
+    }
+    fetch(`/api/results/${result.id}/review`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ reason: reviewForm.reason, comments: reviewForm.comments, qaId }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          showToast("Review updated", "success");
+          setResults(prev => prev.map(r => r.id === result.id ? { ...r, reviewed: true, review: { reason: reviewForm.reason, comments: reviewForm.comments } } : r));
+          cancelEditReview();
+        } else {
+          showToast(data.error || "Failed to update review", "error");
+        }
+      })
+      .catch(() => showToast("Failed to update review", "error"));
+  }
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
@@ -141,7 +202,11 @@ export default function ProjectDetailsPage() {
                 <th className="px-4 py-2 text-left">Test Name</th>
                 <th className="px-4 py-2 text-left">Status</th>
                 <th className="px-4 py-2 text-left">Timestamp</th>
+                <th className="px-4 py-2 text-left">Duration (ms)</th>
                 <th className="px-4 py-2 text-left">Reviewed</th>
+                <th className="px-4 py-2 text-left">Review Reason</th>
+                <th className="px-4 py-2 text-left">Review Comments</th>
+                <th className="px-4 py-2 text-left">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -150,7 +215,27 @@ export default function ProjectDetailsPage() {
                   <td className="px-4 py-2 whitespace-nowrap">{result.testName}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{result.status}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{new Date(result.timestamp).toLocaleString()}</td>
+                  <td className="px-4 py-2 whitespace-nowrap">{result.duration ?? "-"}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{result.reviewed ? "Yes" : "No"}</td>
+                  <td className="px-4 py-2 whitespace-nowrap">{result.review?.reason ?? "-"}</td>
+                  <td className="px-4 py-2 max-w-[200px] truncate whitespace-nowrap">
+                    {result.review?.comments ? (
+                      <button
+                        className="text-blue-500 underline"
+                        onClick={e => {
+                          e.preventDefault();
+                          setShowComment(result.review.comments);
+                        }}
+                      >Show comment</button>
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+                  <td className="px-4 py-2 whitespace-nowrap">
+                    <Button size="sm" variant="outline" onClick={() => startEditReview(result)}>
+                      Edit
+                    </Button>
+                  </td>
                 </tr>
               ))}
               {paginated.length === 0 && (
@@ -169,6 +254,30 @@ export default function ProjectDetailsPage() {
           </div>
         </div>
       </div>
+      <ReviewModal
+        open={modalOpen}
+        onClose={cancelEditReview}
+        onSave={() => {
+          const result = results.find(r => r.id === editingReviewId);
+          if (result) saveReview(result);
+        }}
+        reason={reviewForm.reason}
+        comments={reviewForm.comments}
+        setReason={r => setReviewForm(f => ({ ...f, reason: r }))}
+        setComments={c => setReviewForm(f => ({ ...f, comments: c }))}
+        reasons={REVIEW_REASONS}
+      />
+      {showComment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-20 backdrop-blur-sm">
+          <div className="bg-white rounded shadow-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4">Review Comment</h2>
+            <pre className="whitespace-pre-wrap mb-4">{showComment}</pre>
+            <div className="flex justify-end">
+              <Button variant="secondary" onClick={() => setShowComment(null)}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

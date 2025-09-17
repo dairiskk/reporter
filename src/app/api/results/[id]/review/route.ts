@@ -15,13 +15,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
   try {
-    await prisma.review.create({
-      data: {
-        testResultId,
-        reason,
-        comments,
-        qaId,
-      },
+    await prisma.review.upsert({
+      where: { testResultId },
+      update: { reason, comments, qaId, reviewedAt: new Date() },
+      create: { testResultId, reason, comments, qaId },
     });
     return NextResponse.json({ success: true });
   } catch (e) {

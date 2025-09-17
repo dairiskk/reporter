@@ -26,7 +26,13 @@ export async function GET(req: Request, context: { params: { id: string } }) {
       testName: true,
       status: true,
       timestamp: true,
-      review: true,
+      duration: true,
+      review: {
+        select: {
+          reason: true,
+          comments: true,
+        },
+      },
     },
     orderBy: { timestamp: "desc" },
   });
@@ -36,7 +42,9 @@ export async function GET(req: Request, context: { params: { id: string } }) {
     testName: r.testName,
     status: r.status,
     timestamp: r.timestamp,
+    duration: r.duration,
     reviewed: !!r.review,
+    review: r.review ? { reason: r.review.reason, comments: r.review.comments } : null,
   }));
   return NextResponse.json(data);
 }
