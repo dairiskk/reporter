@@ -36,6 +36,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       projectId,
     },
   });
+  console.log(`[DEBUG] Created ReportFile: id=${reportFile.id}, name=${reportFile.name}, projectId=${reportFile.projectId}`);
   // Parse and insert test results, associating with reportFileId
   const results = parsePlaywrightJson(json, projectId).map(r => ({ ...r, reportFileId: reportFile.id }));
   await prisma.testResult.createMany({ data: results });
@@ -45,6 +46,9 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
 // GET: List all uploaded report files for a project
 export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
   const params = await context.params;
+  // Print all reportFile names for the project before filtering
+  const allFiles = await prisma.reportFile.findMany({ where: { projectId: Number(params.id) }, select: { id: true, name: true } });
+  console.log("[DEBUG] All reportFile names for project:", allFiles.map(f => f.name));
     // Debug: print all headers and search params
     console.log("[DEBUG] Headers:", Object.fromEntries(req.headers.entries()));
     const { searchParams } = new URL(req.url);
