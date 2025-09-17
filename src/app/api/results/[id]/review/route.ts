@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+import { verifyAuth } from "@/utils/verifyAuth";
 
 const prisma = new PrismaClient();
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
+  const user = verifyAuth(req);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const testResultId = Number(params.id);
   const { reason, comments, qaId } = await req.json();
   if (!testResultId || !reason || !qaId) {
@@ -25,6 +30,10 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 }
 
 export async function GET(req: Request, { params }: { params: { id: string } }) {
+  const user = verifyAuth(req);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const testResultId = Number(params.id);
   if (!testResultId) {
     return NextResponse.json({ error: "Invalid result id" }, { status: 400 });
