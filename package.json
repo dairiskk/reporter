@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@headlessui/react": "^2.2.8",
     "@prisma/client": "^6.16.2",
     "@radix-ui/react-slot": "^1.2.3",
     "bcryptjs": "^3.0.2",

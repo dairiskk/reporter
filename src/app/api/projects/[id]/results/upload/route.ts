@@ -1,9 +1,8 @@
 import { parsePlaywrightJson } from "@/utils/parsePlaywrightJson";
 import { verifyAuth } from "@/utils/verifyAuth";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/db";
 import { NextResponse } from "next/server";
 
-const prisma = new PrismaClient();
 
 // POST: Upload a new report file and its test results
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {

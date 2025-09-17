@@ -16,6 +16,7 @@ const REVIEW_REASONS = [
   "FLAKY_TEST",
   "DATA_ISSUE",
   "EXTERNAL_DEPENDENCY",
+  "BUG",
   "OTHER",
 ];
 
