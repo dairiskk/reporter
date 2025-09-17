@@ -29,6 +29,12 @@ export default function ProjectDetailsPage() {
   const { showToast } = useToast();
   const [results, setResults] = useState<any[]>([]);
   const [files, setFiles] = useState<any[]>([]);
+  const [filesTotal, setFilesTotal] = useState(0);
+  const [filesPage, setFilesPage] = useState(1);
+  const [filesPageSize, setFilesPageSize] = useState(10);
+  const [filesSearch, setFilesSearch] = useState("");
+  const [filesDateFrom, setFilesDateFrom] = useState("");
+  const [filesDateTo, setFilesDateTo] = useState("");
   const [selectedFileId, setSelectedFileId] = useState<number | null>(null);
   const [chooseModalOpen, setChooseModalOpen] = useState(false);
   const [uploadName, setUploadName] = useState("");
@@ -46,17 +52,34 @@ export default function ProjectDetailsPage() {
   useEffect(() => {
     if (!projectId) return;
     setLoading(true);
-    // Fetch uploaded files
-    fetch(`/api/projects/${projectId}/results/upload`, {
+    const params = new URLSearchParams({
+      page: String(filesPage),
+      pageSize: String(filesPageSize),
+      name: filesSearch,
+      dateFrom: filesDateFrom,
+      dateTo: filesDateTo,
+    });
+    fetch(`/api/projects/${projectId}/results/upload?${params.toString()}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     })
       .then(res => res.json())
       .then(data => {
-        setFiles(Array.isArray(data) ? data : []);
+        const files = Array.isArray(data.files) ? data.files : [];
+        console.log("[DEBUG] Fetched files:", files);
+        setFiles(files);
+        setFilesTotal(data.total || 0);
+        setFilesPage(data.page || 1);
+        setFilesPageSize(data.pageSize || 10);
         // By default, select the latest file
-        if (Array.isArray(data) && data.length > 0 && selectedFileId === null) {
-          setSelectedFileId(data[0].id);
+        if (files.length > 0 && selectedFileId === null) {
+          setSelectedFileId(files[0].id);
         }
+        setLoading(false);
+      })
+      .catch(() => {
+        setFiles([]);
+        setFilesTotal(0);
+        setLoading(false);
       });
     // Fetch test results for selected file
     if (selectedFileId) {
@@ -66,17 +89,14 @@ export default function ProjectDetailsPage() {
         .then(res => res.json())
         .then(data => {
           setResults(Array.isArray(data) ? data : []);
-          setLoading(false);
         })
         .catch(() => {
           showToast("Failed to load project results", "error");
-          setLoading(false);
         });
     } else {
       setResults([]);
-      setLoading(false);
     }
-  }, [projectId, selectedFileId, showToast]);
+  }, [projectId, selectedFileId, showToast, filesPage, filesPageSize, filesSearch, filesDateFrom, filesDateTo]);
 
   function handleUpload(file: File) {
     if (!file || !projectId || !uploadName) {
@@ -213,23 +233,56 @@ export default function ProjectDetailsPage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-opacity-20 backdrop-blur-sm">
             <div className="bg-white rounded shadow-lg p-6 w-full max-w-md">
               <h2 className="text-xl font-bold mb-4">Choose Uploaded Report</h2>
-              <div className="flex flex-col gap-2 mb-4">
-                {files.map(file => (
-                  <button
-                    key={file.id}
-                    className={`px-4 py-2 rounded border text-left ${selectedFileId === file.id ? "bg-blue-100 border-blue-500" : "bg-white border-gray-300"}`}
-                    onClick={() => {
-                      setSelectedFileId(file.id);
-                      setChooseModalOpen(false);
-                    }}
-                  >
-                    <span className="font-medium">{file.name}</span>
-                    <span className="ml-4 text-gray-500 text-xs">{new Date(file.createdAt).toLocaleString()}</span>
-                  </button>
-                ))}
-                {files.length === 0 && <span className="text-gray-400">No uploads yet.</span>}
+              <div className="mb-4 flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Search by name..."
+                  value={filesSearch}
+                  onChange={e => { setFilesSearch(e.target.value); setFilesPage(1); }}
+                  className="border rounded px-2 py-1 w-full"
+                />
+                <input
+                  type="date"
+                  value={filesDateFrom}
+                  onChange={e => { setFilesDateFrom(e.target.value); setFilesPage(1); }}
+                  className="border rounded px-2 py-1"
+                />
+                <input
+                  type="date"
+                  value={filesDateTo}
+                  onChange={e => { setFilesDateTo(e.target.value); setFilesPage(1); }}
+                  className="border rounded px-2 py-1"
+                />
               </div>
-              <div className="flex justify-end">
+              <div className="flex flex-col gap-2 mb-4 max-h-64 overflow-y-auto">
+                {loading ? (
+                  <span className="text-gray-400">Loading...</span>
+                ) : files.length > 0 ? (
+                  files.map(file => (
+                    <button
+                      key={file.id}
+                      className={`px-4 py-2 rounded border text-left ${selectedFileId === file.id ? "bg-blue-100 border-blue-500" : "bg-white border-gray-300"}`}
+                      onClick={() => {
+                        setSelectedFileId(file.id);
+                        setChooseModalOpen(false);
+                      }}
+                    >
+                      <span className="font-medium">{file.name}</span>
+                      <span className="ml-4 text-gray-500 text-xs">{new Date(file.createdAt).toLocaleString()}</span>
+                    </button>
+                  ))
+                ) : (
+                  <span className="text-gray-400">No uploads yet.</span>
+                )}
+              </div>
+              <div className="flex justify-between items-center mt-2">
+                <span className="text-sm text-gray-500">Page {filesPage} of {Math.max(1, Math.ceil(filesTotal / filesPageSize))}</span>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" disabled={filesPage === 1} onClick={() => setFilesPage(filesPage - 1)}>Previous</Button>
+                  <Button size="sm" variant="outline" disabled={filesPage >= Math.ceil(filesTotal / filesPageSize)} onClick={() => setFilesPage(filesPage + 1)}>Next</Button>
+                </div>
+              </div>
+              <div className="flex justify-end mt-2">
                 <Button variant="secondary" onClick={() => setChooseModalOpen(false)}>Close</Button>
               </div>
             </div>

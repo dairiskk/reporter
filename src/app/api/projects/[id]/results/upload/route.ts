@@ -45,6 +45,10 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
 // GET: List all uploaded report files for a project
 export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
   const params = await context.params;
+    // Debug: print all headers and search params
+    console.log("[DEBUG] Headers:", Object.fromEntries(req.headers.entries()));
+    const { searchParams } = new URL(req.url);
+    console.log("[DEBUG] Search params:", Object.fromEntries(searchParams.entries()));
   const user = verifyAuth(req);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -53,10 +57,37 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
   if (!projectId) {
     return NextResponse.json({ error: "Invalid project id" }, { status: 400 });
   }
-  const files = await prisma.reportFile.findMany({
-    where: { projectId },
-    orderBy: { createdAt: "desc" },
-    select: { id: true, name: true, createdAt: true },
-  });
-  return NextResponse.json(files);
+  // Already declared above for debug logging
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const pageSize = parseInt(searchParams.get("pageSize") || "10", 10);
+  const name = searchParams.get("name") || "";
+  const dateFrom = searchParams.get("dateFrom");
+  const dateTo = searchParams.get("dateTo");
+
+    // Debug logs
+    console.log("[DEBUG] Received name param:", name);
+  const where: any = { projectId };
+  if (name) {
+    where.name = { contains: name, mode: "insensitive" };
+  }
+  if (dateFrom || dateTo) {
+    where.createdAt = {};
+    if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+    if (dateTo) where.createdAt.lte = new Date(dateTo);
+  }
+    console.log("[DEBUG] Constructed where clause:", JSON.stringify(where));
+
+  try {
+    const total = await prisma.reportFile.count({ where });
+    const files = await prisma.reportFile.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true, createdAt: true },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+    return NextResponse.json({ files, total, page, pageSize });
+  } catch (e) {
+    return NextResponse.json({ files: [], total: 0, page, pageSize });
+  }
 }
