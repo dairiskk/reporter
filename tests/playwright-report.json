@@ -1,0 +1,128 @@
+{
+  "config": {
+    "configFile": "/Users/dairisklesniks/AquaProjects/brands-ui-automation/playwright.config.ts",
+    "rootDir": "/Users/dairisklesniks/AquaProjects/brands-ui-automation/brands/celebrino/tests/e2e/ui",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": "/Users/dairisklesniks/AquaProjects/brands-ui-automation/brands/global.setup.ts",
+    "globalTeardown": "/Users/dairisklesniks/AquaProjects/brands-ui-automation/brands/global.teardown.ts",
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "json",
+        {
+          "outputFile": "MEGA_REPORT.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/dairisklesniks/AquaProjects/brands-ui-automation/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "Mobile Iphone 15 - Chrome",
+        "name": "Mobile Iphone 15 - Chrome",
+        "testDir": "/Users/dairisklesniks/AquaProjects/brands-ui-automation/brands/celebrino/tests/e2e/ui",
+        "testIgnore": [],
+        "testMatch": [
+          "/.*.ts/"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.51.1",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "Auth/Not_PNP/TC-2262_LoginPopupPrivacyPolicy.spec.ts",
+      "file": "Auth/Not_PNP/TC-2262_LoginPopupPrivacyPolicy.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "TC-2262 - Check privacy policy link in login pop-up",
+          "file": "Auth/Not_PNP/TC-2262_LoginPopupPrivacyPolicy.spec.ts",
+          "line": 7,
+          "column": 6,
+          "specs": [
+            {
+              "title": "[Geo: SE]",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 60000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "Mobile Iphone 15 - Chrome",
+                  "projectName": "Mobile Iphone 15 - Chrome",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 7727,
+                      "errors": [],
+                      "stdout": [
+                        { "text": "BRAND player Rest initialized\n" },
+                        { "text": "ZEN admin Rest initialized\n" },
+                        { "text": "LAZEN admin Rest Clients initialized\n" },
+                        { "text": "RUNNING: [Geo: SE]\n" },
+                        { "text": "STEP: Change Location\n" },
+                        { "text": "STEP: PLAYER: Open home page\n" },
+                        { "text": "STEP: PLAYER: Can Open Page\n" },
+                        { "text": "STEP: PLAYER: Opens LogIn PopUp\n" }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "steps": [
+                        { "title": "PLAYER: Opens LogIn PopUp", "duration": 281 }
+                      ],
+                      "startTime": "2025-09-17T07:49:39.116Z",
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "a4323f64a08d1e204d55-ec0af3481360c9c3fb4c",
+              "file": "Auth/Not_PNP/TC-2262_LoginPopupPrivacyPolicy.spec.ts",
+              "line": 14,
+              "column": 13
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-09-17T07:49:36.595Z",
+    "duration": 13874.691,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
