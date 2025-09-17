@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String
+  reviews      Review[]
+}
+
+model Project {
+  id        Int         @id @default(autoincrement())
+  name      String
+  results   TestResult[]
+}
+
+model TestResult {
+  id          Int       @id @default(autoincrement())
+  project     Project   @relation(fields: [projectId], references: [id])
+  projectId   Int
+  testName    String
+  filePath    String
+  projectName String
+  status      String    // "passed" | "failed" | "skipped"
+  timestamp   DateTime
+  duration    Int?
+  rawOutput   String?
+  review      Review?
+}
+
+model Review {
+  id           Int        @id @default(autoincrement())
+  testResult   TestResult @relation(fields: [testResultId], references: [id])
+  testResultId Int @unique
+  qa           User       @relation(fields: [qaId], references: [id])
+  qaId         Int
+  reason       ReviewReason
+  comments     String?
+  reviewedAt   DateTime   @default(now())
+}
+
+enum ReviewReason {
+  ENV_ISSUE
+  TEST_SCRIPT_ISSUE
+  NEW_REQUIREMENT
+  FLAKY_TEST
+  DATA_ISSUE
+  EXTERNAL_DEPENDENCY
+  OTHER
+}
