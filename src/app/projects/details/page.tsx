@@ -199,8 +199,8 @@ export default function ProjectDetailsPage() {
             <option value="no">Not reviewed</option>
           </select>
         </div>
-        <div className="overflow-x-auto rounded shadow bg-white">
-          <table className="min-w-full text-sm">
+        <div className="overflow-x-auto rounded shadow bg-white w-full max-w-none">
+          <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-100">
                 <th className="px-4 py-2 text-left">Test Name</th>
@@ -216,7 +216,7 @@ export default function ProjectDetailsPage() {
             <tbody>
               {paginated.map(result => (
                 <tr key={result.id} className="border-b">
-                  <td className="px-4 py-2 whitespace-nowrap">{result.testName}</td>
+                  <td className="px-4 py-2 whitespace-normal">{result.testName}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{result.status}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{new Date(result.timestamp).toLocaleString()}</td>
                   <td className="px-4 py-2 whitespace-nowrap">{result.duration ?? "-"}</td>
