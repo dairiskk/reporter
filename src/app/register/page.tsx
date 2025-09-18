@@ -1,40 +1,43 @@
 "use client";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/toast-provider";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const router = useRouter();
-  const { showToast } = useToast();
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
+    setError("");
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
       const data = await res.json();
-      if (res.ok && data.token) {
-        localStorage.setItem("token", data.token);
-        router.push("/projects");
+      if (res.status === 200) {
+        router.push("/login");
       } else {
-        showToast(data.error || "Login failed", "error");
+        setError(data.error || "Registration failed");
       }
-    } catch (err: any) {
-      showToast(err?.message || "Network error", "error");
+    } catch (err) {
+      setError("Network error");
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow w-full max-w-sm">
-        <h1 className="text-2xl font-bold mb-6 text-center">Login</h1>
+      <form onSubmit={handleRegister} className="bg-white p-8 rounded shadow w-full max-w-sm">
+        <h1 className="text-2xl font-bold mb-6 text-center">Register</h1>
         <Input
           type="email"
           placeholder="Email"
@@ -51,11 +54,10 @@ export default function LoginPage() {
           className="mb-4"
           required
         />
-        {/* Error messages now handled by global toast */}
-        <Button type="submit" className="w-full">Login</Button>
-        <div className="mt-4 text-center">
-          <a href="/register" className="text-blue-600 hover:underline">Register</a>
-        </div>
+        {error && <div className="text-red-500 mb-4">{error}</div>}
+        <Button type="submit" className="w-full" disabled={loading}>
+          {loading ? "Registering..." : "Register"}
+        </Button>
       </form>
     </div>
   );

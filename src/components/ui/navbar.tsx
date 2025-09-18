@@ -1,10 +1,11 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
 
   // Hydration fix: get user email only after mount
   const [userEmail, setUserEmail] = useState("");
@@ -30,13 +31,21 @@ export default function Navbar() {
       <div className="flex items-center gap-8">
         <div className="font-bold text-lg">Reporter</div>
         <button
-          className="text-gray-700 hover:text-blue-600 font-medium"
+          className={`font-medium px-2 py-1 rounded transition-all ${
+            pathname === "/projects"
+              ? "bg-blue-100 text-blue-700 shadow"
+              : "text-gray-700 hover:text-blue-600"
+          }`}
           onClick={() => router.push("/projects")}
         >
           Projects
         </button>
         <button
-          className="text-blue-600 hover:text-blue-800 font-medium"
+          className={`font-medium px-2 py-1 rounded transition-all ${
+            pathname === "/dashboard"
+              ? "bg-blue-100 text-blue-700 shadow"
+              : "text-blue-600 hover:text-blue-800"
+          }`}
           onClick={() => router.push("/dashboard")}
         >
           Dashboard
