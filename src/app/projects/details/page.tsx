@@ -71,8 +71,8 @@ export default function ProjectDetailsPage() {
         setFilesTotal(data.total || 0);
         setFilesPage(data.page || 1);
         setFilesPageSize(data.pageSize || 10);
-        // Always select the latest file on page load
-        if (files.length > 0) {
+        // Only select the latest file if none is selected
+        if (files.length > 0 && (selectedFileId === null || !files.some(f => f.id === selectedFileId))) {
           setSelectedFileId(files[0].id);
         }
         setLoading(false);
