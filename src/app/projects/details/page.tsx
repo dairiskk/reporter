@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/ui/navbar";
@@ -20,7 +20,7 @@ const REVIEW_REASONS = [
   "OTHER",
 ];
 
-export default function ProjectDetailsPage() {
+function ProjectDetailsPage() {
   const router = useRouter();
   const params = useSearchParams();
   const projectId = params.get("id");
@@ -72,7 +72,7 @@ export default function ProjectDetailsPage() {
         setFilesPage(data.page || 1);
         setFilesPageSize(data.pageSize || 10);
         // Only select the latest file if none is selected
-        if (files.length > 0 && (selectedFileId === null || !files.some(f => f.id === selectedFileId))) {
+        if (files.length > 0 && (selectedFileId === null || !files.some((f: { id: string }) => String(f.id) === String(selectedFileId)))) {
           setSelectedFileId(files[0].id);
         }
         setLoading(false);
@@ -445,5 +445,13 @@ export default function ProjectDetailsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ProjectDetailsPage />
+    </Suspense>
   );
 }

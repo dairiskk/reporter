@@ -39,7 +39,7 @@ export default function DashboardPage() {
 
   // New state for multiple project/report pairs
   const [projectReportPairs, setProjectReportPairs] = useState([
-    { projectId: "", reportIds: [] as string[], projectSearch: "", reportFileSearch: "" }
+    { projectId: "", reportIds: [] as string[], projectSearch: "", reportFileSearch: "", availableReports: [] as ReportFile[] }
   ]);
 
   // Helper to update a pair
@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
   // Helper to add a new pair
   function addPair() {
-    setProjectReportPairs(pairs => [...pairs, { projectId: "", reportIds: [], projectSearch: "", reportFileSearch: "" }]);
+    setProjectReportPairs(pairs => [...pairs, { projectId: "", reportIds: [], projectSearch: "", reportFileSearch: "", availableReports: [] }]);
   }
 
   // Helper to remove a pair
@@ -203,7 +203,7 @@ export default function DashboardPage() {
               <Button className="bg-gray-100 px-2 py-1" onClick={addPair}>+ Add Project</Button>
               <div className="flex gap-2">
                 <Button
-                  onClick={() => { setProjectReportPairs([{ projectId: "", reportIds: [], projectSearch: "", reportFileSearch: "" }]); setDateRange({ start: "", end: "" }); }}
+                  onClick={() => { setProjectReportPairs([{ projectId: "", reportIds: [], projectSearch: "", reportFileSearch: "", availableReports: [] }]); setDateRange({ start: "", end: "" }); }}
                   className="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium px-4 py-1 rounded-lg shadow"
                 >
                   Clear
