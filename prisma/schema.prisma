@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -71,5 +71,6 @@ enum ReviewReason {
   FLAKY_TEST
   DATA_ISSUE
   EXTERNAL_DEPENDENCY
+  BUG
   OTHER
 }
